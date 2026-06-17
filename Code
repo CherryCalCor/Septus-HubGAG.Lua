@@ -755,6 +755,7 @@ local function switchTab(btn, page)
 end
 
 UI.NavBtns.Home.MouseButton1Click:Connect(function() switchTab(UI.NavBtns.Home, UI.Pages.Home) end)
+UI.NavBtns.AutoBuy.MouseButton1Click:Connect(function() switchTab(UI.NavBtns.AutoBuy, UI.Pages.AutoBuy) end)
 
 local Title = Instance.new("TextLabel", UI.Frame)
 Title.Size = UDim2.new(0, 140, 0, 30)
