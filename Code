@@ -806,7 +806,7 @@ do
                 task.spawn(function()
                     while activeFarms[gearName] do
                         pcall(function()
-                            local packetStr = "j" .. string.char(0) .. string.char(#gearName) .. gearName
+                            local packetStr = "j" .. string.char(1) .. string.char(#gearName) .. gearName
                             local args = { buffer.fromstring(packetStr) }
                             packetRemote:FireServer(unpack(args))
                         end)
@@ -821,6 +821,7 @@ do
         switchTab(UI.NavBtns.AutoBuy, UI.Pages.AutoBuy) 
     end)
 end
+
 
 local currentPage = UI.Pages.Home
 UI.NavBtns.Home.Indicator.BackgroundTransparency = 0 
