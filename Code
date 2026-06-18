@@ -773,7 +773,10 @@ do
     end)
 
     local activeFarms = {}
+    
     local packetRemote = game:GetService("ReplicatedStorage"):WaitForChild("SharedModules"):WaitForChild("Packet"):WaitForChild("RemoteEvent")
+    local PacketFramework = require(game:GetService("ReplicatedStorage"):WaitForChild("SharedModules"):WaitForChild("Packet"))
+    local purchasePacket = PacketFramework("PurchaseGear")
 
     for i, seedName in ipairs(seedsList) do
         local yPos = 5 + (i - 1) * 35
@@ -806,9 +809,7 @@ do
                 task.spawn(function()
                     while activeFarms[gearName] do
                         pcall(function()
-                            local packetStr = "j" .. string.char(1) .. string.char(#gearName) .. gearName
-                            local args = { buffer.fromstring(packetStr) }
-                            packetRemote:FireServer(unpack(args))
+                            purchasePacket:Fire(gearName, 1)
                         end)
                         task.wait(0.5)
                     end
