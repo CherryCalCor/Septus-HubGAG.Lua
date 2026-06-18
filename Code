@@ -697,13 +697,47 @@ do
 
     local seedsList = {
         "Carrot", "Strawberry", "Blueberry", "Tulip", "Tomato", "Apple", "Bamboo", 
-        "Corn", "Cactus", "Pineapple", "Green Bean", "Banana", "Grape", "Coconut", 
-        "Mango", "Dragon Fruit", "Acorn", "Cherry", "Sunflower", "Venus Fly Trap", "Pomegranate"
+        "Corn", "Cactus", "Mushroom", "Pineapple", "Green Bean", "Banana", "Grape", "Coconut", 
+        "Mango", "Dragon Fruit", "Acorn", "Cherry", "Sunflower", "Venus Fly Trap", "Pomegranate",
+        "Poison Apple", "Moon Bloom", "Dragon's Breath"
     }
     
     local expandedHeight = 10 + (#seedsList * 35)
-
     local seedsExpanded = false
+
+    local BuyGearsBtn, BuyGearsArrow, BuyGearsLbl = createMenuBtn(UI.Pages.AutoBuy, "Buy Gears", 40, true)
+
+    local GearsContainer = Instance.new("Frame", UI.Pages.AutoBuy)
+    GearsContainer.Size = UDim2.new(1, -10, 0, 0)
+    GearsContainer.Position = UDim2.new(0, 5, 0, 80)
+    GearsContainer.BackgroundTransparency = 1
+    GearsContainer.ClipsDescendants = true
+    GearsContainer.Visible = false
+
+    local gearsList = {
+        "Common Watering Can", "Common Sprinkler", "Sign", "Uncommon Sprinkler", "Trowel",
+        "Rare Sprinkler", "Jump Mushroom", "Speed Mushroom", "Lantern", "Shrink Mushroom",
+        "Supersize Mushroom", "Gnome", "Flashbang", "Basic Pot", "Legendary Sprinkler",
+        "Invisibility Mushroom", "Teleporter", "Wheelbarrow", "Super Watering Can", "Super Sprinkler"
+    }
+
+    local gearsExpandedHeight = 10 + (#gearsList * 35)
+    local gearsExpanded = false
+
+    local function updateAutoBuyLayout()
+        local seedsH = seedsExpanded and expandedHeight or 0
+        local gearsH = gearsExpanded and gearsExpandedHeight or 0
+        
+        local buyGearsY = 40 + seedsH
+        local gearsContainerY = buyGearsY + 40
+        
+        Services.TS:Create(BuyGearsBtn, TweenInfo.new(0.3), {Position = UDim2.new(0, 10, 0, buyGearsY)}):Play()
+        Services.TS:Create(GearsContainer, TweenInfo.new(0.3), {Position = UDim2.new(0, 5, 0, gearsContainerY)}):Play()
+        
+        local totalHeight = gearsContainerY + gearsH + 20
+        UI.Pages.AutoBuy.CanvasSize = UDim2.new(0, 0, 0, math.max(totalHeight, 400))
+    end
+
     BuySeedsBtn.MouseButton1Click:Connect(function()
         seedsExpanded = not seedsExpanded
         SeedsContainer.Visible = true
@@ -712,11 +746,28 @@ do
         local tween = Services.TS:Create(SeedsContainer, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, seedsExpanded and expandedHeight or 0)})
         tween:Play()
         
-        UI.Pages.AutoBuy.CanvasSize = UDim2.new(0, 0, 0, seedsExpanded and (expandedHeight + 60) or 400)
+        updateAutoBuyLayout()
         
         if not seedsExpanded then
             tween.Completed:Once(function()
                 if not seedsExpanded then SeedsContainer.Visible = false end
+            end)
+        end
+    end)
+
+    BuyGearsBtn.MouseButton1Click:Connect(function()
+        gearsExpanded = not gearsExpanded
+        GearsContainer.Visible = true
+        
+        Services.TS:Create(BuyGearsArrow, TweenInfo.new(0.3), {Rotation = gearsExpanded and 180 or 0}):Play()
+        local tween = Services.TS:Create(GearsContainer, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, gearsExpanded and gearsExpandedHeight or 0)})
+        tween:Play()
+        
+        updateAutoBuyLayout()
+        
+        if not gearsExpanded then
+            tween.Completed:Once(function()
+                if not gearsExpanded then GearsContainer.Visible = false end
             end)
         end
     end)
@@ -735,6 +786,27 @@ do
                     while activeFarms[seedName] do
                         pcall(function()
                             local packetStr = "j" .. string.char(0) .. string.char(#seedName) .. seedName
+                            local args = { buffer.fromstring(packetStr) }
+                            packetRemote:FireServer(unpack(args))
+                        end)
+                        task.wait(0.5)
+                    end
+                end)
+            end
+        end)
+    end
+
+    for i, gearName in ipairs(gearsList) do
+        local yPos = 5 + (i - 1) * 35
+        
+        local toggle, circle, setToggle = createToggle(GearsContainer, gearName, yPos, false, function(state)
+            activeFarms[gearName] = state
+            
+            if state then
+                task.spawn(function()
+                    while activeFarms[gearName] do
+                        pcall(function()
+                            local packetStr = "j" .. string.char(0) .. string.char(#gearName) .. gearName
                             local args = { buffer.fromstring(packetStr) }
                             packetRemote:FireServer(unpack(args))
                         end)
