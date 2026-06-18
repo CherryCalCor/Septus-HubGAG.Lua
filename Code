@@ -879,6 +879,78 @@ do
     end)
 end
 
+UI.NavBtns.AutoSell = createNavBtn("Auto-Sell", 3)
+UI.Pages.AutoSell = createPage(400)
+
+do
+    local autoSellEnabled = false
+    local sellInterval = 5
+
+    local PacketFramework = require(game:GetService("ReplicatedStorage"):WaitForChild("SharedModules"):WaitForChild("Packet"))
+    local sellPacket = PacketFramework("SellAll")
+    sellPacket.Id = 156 
+
+    createToggle(UI.Pages.AutoSell, "Auto-Sell", 10, false, function(state)
+        autoSellEnabled = state
+    end)
+
+    local InputBg = Instance.new("Frame", UI.Pages.AutoSell)
+    InputBg.Size = UDim2.new(1, -20, 0, 35)
+    InputBg.Position = UDim2.new(0, 10, 0, 50)
+    InputBg.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    Instance.new("UICorner", InputBg).CornerRadius = UDim.new(0, 6)
+    
+    local DelayInput = Instance.new("TextBox", InputBg)
+    DelayInput.Size = UDim2.new(1, -10, 1, 0)
+    DelayInput.Position = UDim2.new(0, 5, 0, 0)
+    DelayInput.BackgroundTransparency = 1
+    DelayInput.TextColor3 = Color3.new(1, 1, 1)
+    DelayInput.Font = Enum.Font.Gotham
+    DelayInput.TextSize = 14
+    DelayInput.PlaceholderText = "Enter seconds (e.g. 5)"
+    DelayInput.Text = tostring(sellInterval)
+    DelayInput.ClearTextOnFocus = false
+    DelayInput.TextXAlignment = Enum.TextXAlignment.Left
+
+    local HintLabel = Instance.new("TextLabel", UI.Pages.AutoSell)
+    HintLabel.Size = UDim2.new(1, -20, 0, 40)
+    HintLabel.Position = UDim2.new(0, 10, 0, 95)
+    HintLabel.BackgroundTransparency = 1
+    HintLabel.Text = "Enter the number of seconds after which Auto-sell will be activated\nВведите количество секунд через которое продажа будет активироваться."
+    HintLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    HintLabel.Font = Enum.Font.Gotham
+    HintLabel.TextSize = 11
+    HintLabel.TextWrapped = true
+    HintLabel.TextXAlignment = Enum.TextXAlignment.Left
+    HintLabel.TextYAlignment = Enum.TextYAlignment.Top
+
+    DelayInput.FocusLost:Connect(function()
+        local val = tonumber(DelayInput.Text)
+        if val and val > 0 then
+            sellInterval = val
+        else
+
+            DelayInput.Text = tostring(sellInterval)
+        end
+    end)
+
+    task.spawn(function()
+        while true do
+            if autoSellEnabled then
+                pcall(function()
+                    sellPacket:Fire()
+                end)
+                task.wait(sellInterval)
+            else
+                task.wait(0.5)
+            end
+        end
+    end)
+
+    UI.NavBtns.AutoSell.MouseButton1Click:Connect(function() 
+        switchTab(UI.NavBtns.AutoSell, UI.Pages.AutoSell) 
+    end)
+end
 
 local currentPage = UI.Pages.Home
 UI.NavBtns.Home.Indicator.BackgroundTransparency = 0 
