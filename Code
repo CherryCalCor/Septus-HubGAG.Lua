@@ -724,17 +724,43 @@ do
     local gearsExpandedHeight = 10 + (#gearsList * 35)
     local gearsExpanded = false
 
+    local BuyCratesBtn, BuyCratesArrow, BuyCratesLbl = createMenuBtn(UI.Pages.AutoBuy, "Buy Crate", 80, true)
+
+    local CratesContainer = Instance.new("Frame", UI.Pages.AutoBuy)
+    CratesContainer.Size = UDim2.new(1, -10, 0, 0)
+    CratesContainer.Position = UDim2.new(0, 5, 0, 120)
+    CratesContainer.BackgroundTransparency = 1
+    CratesContainer.ClipsDescendants = true
+    CratesContainer.Visible = false
+
+    local cratesList = {
+        "Ladder Crate", "Bench Crate", "Light Crate", "Sign Crate", "Arch Crate", 
+        "Roleplay Crate", "Bridge Crate", "Spring Crate", "Seesaw Crate", 
+        "Conveyor Crate", "Owner Door Crate", "Bear Trap Crate", "Fence Crate", 
+        "Teleporter Pad Crate"
+    }
+
+    local cratesExpandedHeight = 10 + (#cratesList * 35)
+    local cratesExpanded = false
+
     local function updateAutoBuyLayout()
         local seedsH = seedsExpanded and expandedHeight or 0
         local gearsH = gearsExpanded and gearsExpandedHeight or 0
+        local cratesH = cratesExpanded and cratesExpandedHeight or 0
         
         local buyGearsY = 40 + seedsH
         local gearsContainerY = buyGearsY + 40
         
+        local buyCratesY = gearsContainerY + gearsH
+        local cratesContainerY = buyCratesY + 40
+        
         Services.TS:Create(BuyGearsBtn, TweenInfo.new(0.3), {Position = UDim2.new(0, 10, 0, buyGearsY)}):Play()
         Services.TS:Create(GearsContainer, TweenInfo.new(0.3), {Position = UDim2.new(0, 5, 0, gearsContainerY)}):Play()
         
-        local totalHeight = gearsContainerY + gearsH + 20
+        Services.TS:Create(BuyCratesBtn, TweenInfo.new(0.3), {Position = UDim2.new(0, 10, 0, buyCratesY)}):Play()
+        Services.TS:Create(CratesContainer, TweenInfo.new(0.3), {Position = UDim2.new(0, 5, 0, cratesContainerY)}):Play()
+        
+        local totalHeight = cratesContainerY + cratesH + 20
         UI.Pages.AutoBuy.CanvasSize = UDim2.new(0, 0, 0, math.max(totalHeight, 400))
     end
 
@@ -772,25 +798,40 @@ do
         end
     end)
 
+    BuyCratesBtn.MouseButton1Click:Connect(function()
+        cratesExpanded = not cratesExpanded
+        CratesContainer.Visible = true
+        
+        Services.TS:Create(BuyCratesArrow, TweenInfo.new(0.3), {Rotation = cratesExpanded and 180 or 0}):Play()
+        local tween = Services.TS:Create(CratesContainer, TweenInfo.new(0.3), {Size = UDim2.new(1, -10, 0, cratesExpanded and cratesExpandedHeight or 0)})
+        tween:Play()
+        
+        updateAutoBuyLayout()
+        
+        if not cratesExpanded then
+            tween.Completed:Once(function()
+                if not cratesExpanded then CratesContainer.Visible = false end
+            end)
+        end
+    end)
+
     local activeFarms = {}
     
     local packetRemote = game:GetService("ReplicatedStorage"):WaitForChild("SharedModules"):WaitForChild("Packet"):WaitForChild("RemoteEvent")
     local PacketFramework = require(game:GetService("ReplicatedStorage"):WaitForChild("SharedModules"):WaitForChild("Packet"))
-    local purchasePacket = PacketFramework("PurchaseGear")
+    local purchaseGearPacket = PacketFramework("PurchaseGear")
+    local purchaseCratePacket = PacketFramework("PurchaseCrate")
 
     for i, seedName in ipairs(seedsList) do
         local yPos = 5 + (i - 1) * 35
-        
-        local toggle, circle, setToggle = createToggle(SeedsContainer, seedName, yPos, false, function(state)
+        createToggle(SeedsContainer, seedName, yPos, false, function(state)
             activeFarms[seedName] = state
-            
             if state then
                 task.spawn(function()
                     while activeFarms[seedName] do
                         pcall(function()
                             local packetStr = "j" .. string.char(0) .. string.char(#seedName) .. seedName
-                            local args = { buffer.fromstring(packetStr) }
-                            packetRemote:FireServer(unpack(args))
+                            packetRemote:FireServer(buffer.fromstring(packetStr))
                         end)
                         task.wait(0.5)
                     end
@@ -801,15 +842,30 @@ do
 
     for i, gearName in ipairs(gearsList) do
         local yPos = 5 + (i - 1) * 35
-        
-        local toggle, circle, setToggle = createToggle(GearsContainer, gearName, yPos, false, function(state)
+        createToggle(GearsContainer, gearName, yPos, false, function(state)
             activeFarms[gearName] = state
-            
             if state then
                 task.spawn(function()
                     while activeFarms[gearName] do
                         pcall(function()
-                            purchasePacket:Fire(gearName, 1)
+                            purchaseGearPacket:Fire(gearName, 1)
+                        end)
+                        task.wait(0.5)
+                    end
+                end)
+            end
+        end)
+    end
+
+    for i, crateName in ipairs(cratesList) do
+        local yPos = 5 + (i - 1) * 35
+        createToggle(CratesContainer, crateName, yPos, false, function(state)
+            activeFarms[crateName] = state
+            if state then
+                task.spawn(function()
+                    while activeFarms[crateName] do
+                        pcall(function()
+                            purchaseCratePacket:Fire(crateName, 1)
                         end)
                         task.wait(0.5)
                     end
