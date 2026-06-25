@@ -822,23 +822,34 @@ do
     local purchaseGearPacket = PacketFramework("PurchaseGear")
     local purchaseCratePacket = PacketFramework("PurchaseCrate")
 
-    for i, seedName in ipairs(seedsList) do
-        local yPos = 5 + (i - 1) * 35
-        createToggle(SeedsContainer, seedName, yPos, false, function(state)
-            activeFarms[seedName] = state
-            if state then
-                task.spawn(function()
-                    while activeFarms[seedName] do
-                        pcall(function()
-                            local packetStr = "j" .. string.char(0) .. string.char(#seedName) .. seedName
-                            packetRemote:FireServer(buffer.fromstring(packetStr))
-                        end)
-                        task.wait(0.5)
-                    end
-                end)
-            end
-        end)
-    end
+    -- Инициализируем пакеты (это у тебя уже частично есть перед циклами)
+local PacketFramework = require(game:GetService("ReplicatedStorage"):WaitForChild("SharedModules"):WaitForChild("Packet"))
+
+local purchaseSeedPacket = PacketFramework("PurchaseSeed")
+purchaseSeedPacket.Id = 122 -- Жестко задаем ID, как ты и определил
+
+local purchaseGearPacket = PacketFramework("PurchaseGear")
+local purchaseCratePacket = PacketFramework("PurchaseCrate")
+
+-- Обновленная логика цикла покупки семян
+for i, seedName in ipairs(seedsList) do
+    local yPos = 5 + (i - 1) * 35
+    createToggle(SeedsContainer, seedName, yPos, false, function(state)
+        activeFarms[seedName] = state
+        if state then
+            task.spawn(function()
+                while activeFarms[seedName] do
+                    pcall(function()
+                        -- Вызываем событие, передавая только название семечка
+                        purchaseSeedPacket:Fire(seedName)
+                    end)
+                    task.wait(0.5) -- Задержка для защиты от кика за спам
+                end
+            end)
+        end
+    end)
+end
+
 
     for i, gearName in ipairs(gearsList) do
         local yPos = 5 + (i - 1) * 35
