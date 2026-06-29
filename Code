@@ -897,7 +897,7 @@ do
 
     local PacketFramework = require(game:GetService("ReplicatedStorage"):WaitForChild("SharedModules"):WaitForChild("Packet"))
     local sellPacket = PacketFramework("SellAll")
-    sellPacket.Id = 156 
+    sellPacket.Id = 175 
 
     createToggle(UI.Pages.AutoSell, "Auto-Sell", 10, false, function(state)
         autoSellEnabled = state
