@@ -973,63 +973,36 @@ do
     local CollectFruit = Networking.Garden.CollectFruit
     local plantsFolder = workspace.Gardens.Plot1.Plants
 
-    local function HarvestTarget(plant, doTeleport)
-
-        if plant:GetAttribute("PlantGrowthReady") == true then
-            local plantId = plant:GetAttribute("PlantId")
-            if not plantId then return end
-
-            if doTeleport and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                LP.Character.HumanoidRootPart.CFrame = plant:GetPivot()
-                task.wait(0.2)
-            end
-
-            local collected = false
-            
-            local function tryCollect(fruitId)
-                if fruitId and string.len(fruitId) > 10 then
-                    pcall(function() CollectFruit:Fire(plantId, fruitId) end)
-                    collected = true
-                end
-            end
-
-            local fruitsFolder = plant:FindFirstChild("Fruits")
-            if fruitsFolder then
-                for _, fruit in pairs(fruitsFolder:GetChildren()) do
-
-                    local fruitId = string.match(fruit.Name, "%w+%-%w+%-%w+%-%w+%-%w+")
-                    if not fruitId then
-
-                        local parts = string.split(fruit.Name, "_")
-                        fruitId = parts[#parts]
-                    end
-                    tryCollect(fruitId)
-                end
-            end
-
-            if not collected then
-
-                for _, child in pairs(plant:GetChildren()) do
-                    local fruitId = string.match(child.Name, "%w+%-%w+%-%w+%-%w+%-%w+")
-                    if fruitId then tryCollect(fruitId) end
-                end
-                
-                if not collected then
-                    pcall(function() CollectFruit:Fire(plantId, plantId) end)
-                end
-            end
-        end
-    end
-
     createToggle(UI.Pages.AutoCollect, "Teleport collect", 10, false, function(state)
         tpCollectEnabled = state
         if state then
             task.spawn(function()
                 while tpCollectEnabled do
-                    if plantsFolder then
+
+                    local char = LP.Character
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    
+                    if hrp and plantsFolder then
                         for _, plant in pairs(plantsFolder:GetChildren()) do
-                            if not tpCollectEnabled then break end 
-                            HarvestTarget(plant, true)
+                            if not tpCollectEnabled then break end
+                            
+                            local fruitsFolder = plant:FindFirstChild("Fruits")
+                            if fruitsFolder then
+                                for _, fruit in pairs(fruitsFolder:GetChildren()) do
+                                    
+                                    hrp.CFrame = plant:GetPivot()
+                                    
+                                    local nameParts = string.split(fruit.Name, "_")
+                                    local fruitId = nameParts[3]
+
+                                    if fruitId then
+                                        task.wait(0.2)
+                                        pcall(function()
+                                            CollectFruit:Fire(plant:GetAttribute("PlantId"), fruitId)
+                                        end)
+                                    end
+                                end
+                            end
                         end
                     end
                     task.wait(1)
@@ -1046,10 +1019,23 @@ do
                     if plantsFolder then
                         for _, plant in pairs(plantsFolder:GetChildren()) do
                             if not quickCollectEnabled then break end
-                            HarvestTarget(plant, false)
+                            
+                            local fruitsFolder = plant:FindFirstChild("Fruits")
+                            if fruitsFolder then
+                                for _, fruit in pairs(fruitsFolder:GetChildren()) do
+                                    local nameParts = string.split(fruit.Name, "_")
+                                    local fruitId = nameParts[3]
+
+                                    if fruitId then
+                                        pcall(function()
+                                            CollectFruit:Fire(plant:GetAttribute("PlantId"), fruitId)
+                                        end)
+                                    end
+                                end
+                            end
                         end
                     end
-                    task.wait(0.3)
+                    task.wait(0.2)
                 end
             end)
         end
